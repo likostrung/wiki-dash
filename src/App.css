@@ -1,0 +1,28 @@
+/* App.css - Versão Minimalista para o Wiki Dash 2.0 */
+
+:root {
+  --bg-black: #050505;
+  --text-gray: #eee;
+  --accent-cyan: #00e5ff;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-black);
+  color: var(--text-gray);
+  font-family: 'monospace', sans-serif;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Reset básico para garantir que nada quebre o layout */
+* {
+  box-sizing: border-box;
+}
