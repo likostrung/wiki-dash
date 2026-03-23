@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
+// --- CONFIGURAÇÃO DE AMBIENTE ---
+const API_URL = 'https://wiki-dash.onrender.com'; 
+
 const App = () => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [alerts, setAlerts] = useState([]);
@@ -23,7 +26,7 @@ const App = () => {
     setAlerts(prev => [novoAlerta, ...prev].slice(0, 5));
   };
 
-  // MOTOR 1: WEBSOCKET BINANCE (PREÇOS EM TEMPO REAL)
+  // MOTOR 1: BINANCE WEBSOCKET (CORRIGIDO PARA NÃO TRAVAR)
   useEffect(() => {
     const streams = coins.map(c => `${c.symbol}@ticker`).join('/');
     const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`);
@@ -33,10 +36,6 @@ const App = () => {
       setCoins(prev => prev.map(c => {
         if (c.symbol === data.s.toLowerCase()) {
           const newPrice = parseFloat(data.c);
-          // Logica de alertas baseada no preço real
-          if (newPrice <= c.suporte && c.suporte !== 0) addAlert(c.name, "SUPORTE", c.suporte);
-          if (newPrice >= c.resistencia && c.resistencia !== 0) addAlert(c.name, "RESISTÊNCIA", c.resistencia);
-          
           return { 
             ...c, 
             price: newPrice, 
@@ -47,20 +46,39 @@ const App = () => {
         return c;
       }));
     };
-
-    ws.onerror = (err) => console.error("Erro no WebSocket:", err);
     return () => ws.close();
-  }, []); // Rodar apenas uma vez para manter a conexão viva
+  }, []); // Dependência vazia para o motor rodar direto
+
+  // MOTOR 2: IA GEMINI (CHAMADA SEGURA)
+  useEffect(() => {
+    const runIA = async () => {
+      setIsCalculating(true);
+      try {
+        const updated = await Promise.all(coins.map(async (c) => {
+          try {
+            const res = await fetch(`${API_URL}/api/ia-predict?ativo=${c.name}&preco=${c.price}&rsi=${c.rsi}`);
+            const data = await res.json();
+            return data ? { ...c, suporte: data.suporte, resistencia: data.resistencia, sinal: data.sinal } : c;
+          } catch (e) { return c; }
+        }));
+        setCoins(updated);
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+    const interval = setInterval(runIA, 60000); 
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div style={{ backgroundColor: '#020617', color: 'white', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', borderBottom: '1px solid #1e293b', paddingBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#22d3ee', letterSpacing: '2px', fontWeight: 'bold' }}>WIKI COMMAND</h1>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#4ade80', boxShadow: '0 0 5px #4ade80' }}></div>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: isCalculating ? '#a855f7' : '#4ade80', boxShadow: isCalculating ? '0 0 8px #a855f7' : '0 0 5px #4ade80', transition: '0.4s' }}></div>
         </div>
         <div style={{ textAlign: 'right', color: '#4ade80', fontSize: '0.8rem' }}>
-          ● BINANCE_LIVE_STREAM
+          ● CLOUD_LIVE_MODE
         </div>
       </div>
 
@@ -89,7 +107,7 @@ const App = () => {
                 <td style={{ padding: '20px', borderRadius: '12px 0 0 12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={{ fontSize: '1.4rem', fontWeight: 'bold' }}>{coin.name}</span>
-                    <span style={{ fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', backgroundColor: '#1e293b', color: '#94a3b8' }}>{coin.sinal}</span>
+                    <span style={{ fontSize: '0.6rem', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold', backgroundColor: coin.sinal === 'BUY' ? '#064e3b' : coin.sinal === 'SELL' ? '#7f1d1d' : '#1e293b', color: coin.sinal === 'BUY' ? '#4ade80' : coin.sinal === 'SELL' ? '#f87171' : '#94a3b8' }}>{coin.sinal}</span>
                   </div>
                   <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: '4px' }}>VOL {coin.vol}</div>
                 </td>
