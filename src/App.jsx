@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // --- CONFIGURAÇÃO DE AMBIENTE DINÂMICA ---
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:8000'
-  : 'https://wiki-dash.onrender.com'; 
+const API_URL = 'https://wiki-dash.onrender.com'; 
 
 const App = () => {
   const [isCalculating, setIsCalculating] = useState(false);
@@ -53,7 +51,7 @@ const App = () => {
       setIsCalculating(true);
       const updated = await Promise.all(coins.map(async (c) => {
         try {
-          // Chamada corrigida para o seu back no Render
+          // Chamada para a rota que configuramos no backend
           const res = await fetch(`${API_URL}/api/ia-predict?ativo=${c.name}&preco=${c.price}&rsi=${c.rsi}`);
           const data = await res.json();
           return data ? { ...c, suporte: data.suporte, resistencia: data.resistencia, sinal: data.sinal } : c;
@@ -65,7 +63,7 @@ const App = () => {
       setCoins(updated);
       setTimeout(() => setIsCalculating(false), 2000);
     };
-    const interval = setInterval(runIA, 30000); 
+    const interval = setInterval(runIA, 30000); // 30s para economizar API gratuita
     return () => clearInterval(interval);
   }, [coins.length]);
 
