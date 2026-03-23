@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// --- CONFIGURAÇÃO DE AMBIENTE ---
+// --- CONFIGURAÇÃO DE AMBIENTE DINÂMICA ---
 const API_URL = 'https://wiki-dash.onrender.com'; 
 
 const App = () => {
@@ -26,47 +26,43 @@ const App = () => {
     setAlerts(prev => [novoAlerta, ...prev].slice(0, 5));
   };
 
-  // MOTOR 1: BINANCE WEBSOCKET (CORRIGIDO PARA NÃO TRAVAR)
+  // MOTOR 1: WEBSOCKET BINANCE (CORREÇÃO DE CONEXÃO DIRETA)
   useEffect(() => {
-    const streams = coins.map(c => `${c.symbol}@ticker`).join('/');
-    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streams}`);
+    const ws = new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@ticker/solusdt@ticker/xrpusdt@ticker/hbarusdt@ticker`);
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setCoins(prev => prev.map(c => {
         if (c.symbol === data.s.toLowerCase()) {
           const newPrice = parseFloat(data.c);
-          return { 
-            ...c, 
-            price: newPrice, 
-            var24h: parseFloat(data.P), 
-            vol: (parseFloat(data.q) / 1000000).toFixed(1) + 'M' 
-          };
+          if (newPrice <= c.suporte && c.suporte !== 0) addAlert(c.name, "SUPORTE", c.suporte);
+          if (newPrice >= c.resistencia && c.resistencia !== 0) addAlert(c.name, "RESISTÊNCIA", c.resistencia);
+          return { ...c, price: newPrice, var24h: parseFloat(data.P), vol: (parseFloat(data.q) / 1000000).toFixed(1) + 'M' };
         }
         return c;
       }));
     };
     return () => ws.close();
-  }, []); // Dependência vazia para o motor rodar direto
+  }, []); // Trava o motor para rodar uma única vez e não cair
 
-  // MOTOR 2: IA GEMINI (CHAMADA SEGURA)
+  // MOTOR 2: IA GEMINI
   useEffect(() => {
     const runIA = async () => {
       setIsCalculating(true);
-      try {
-        const updated = await Promise.all(coins.map(async (c) => {
-          try {
-            const res = await fetch(`${API_URL}/api/ia-predict?ativo=${c.name}&preco=${c.price}&rsi=${c.rsi}`);
-            const data = await res.json();
-            return data ? { ...c, suporte: data.suporte, resistencia: data.resistencia, sinal: data.sinal } : c;
-          } catch (e) { return c; }
-        }));
-        setCoins(updated);
-      } finally {
-        setIsCalculating(false);
-      }
+      const updated = await Promise.all(coins.map(async (c) => {
+        try {
+          const res = await fetch(`${API_URL}/api/ia-predict?ativo=${c.name}&preco=${c.price}&rsi=${c.rsi}`);
+          const data = await res.json();
+          return data ? { ...c, suporte: data.suporte, resistencia: data.resistencia, sinal: data.sinal } : c;
+        } catch (e) { 
+          console.error("Erro na conexão com o motor de IA:", e);
+          return c; 
+        }
+      }));
+      setCoins(updated);
+      setTimeout(() => setIsCalculating(false), 2000);
     };
-    const interval = setInterval(runIA, 60000); 
+    const interval = setInterval(runIA, 35000); 
     return () => clearInterval(interval);
   }, []);
 
