@@ -1,72 +1,85 @@
 import React, { useState, useEffect } from 'react';
 
-export default function App() {
-  const [data, setData] = useState({});
-  const coins = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT"];
+// Mantendo seu estilo original de Dashboard Black/Neon
+const styles = {
+  container: { backgroundColor: '#050505', color: 'white', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif' },
+  header: { textAlign: 'center', marginBottom: '50px' },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '25px', maxWidth: '1200px', margin: '0 auto' },
+  card: { 
+    background: 'rgba(255, 255, 255, 0.03)', 
+    backdropFilter: 'blur(10px)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    padding: '30px', 
+    borderRadius: '20px', 
+    textAlign: 'center',
+    transition: 'transform 0.3s ease'
+  },
+  price: { fontSize: '2.8rem', fontWeight: '900', color: '#00ff88', textShadow: '0 0 20px rgba(0, 255, 136, 0.3)' },
+  badge: { padding: '8px 15px', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '15px', display: 'inline-block' },
+  infoBox: { marginTop: '20px', padding: '15px', borderRadius: '12px', backgroundColor: 'rgba(0,0,0,0.4)', border: '1px solid #222' },
+  signal: { fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '2px', marginTop: '10px' }
+};
+
+function App() {
+  const [data, setData] = useState({
+    BTC: { price: "0.00", ai: null },
+    ETH: { price: "0.00", ai: null },
+    SOL: { price: "0.00", ai: null },
+    XRP: { price: "0.00", ai: null }
+  });
 
   const fetchData = async () => {
     try {
-      // 1. Busca os preços direto da Binance
-      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(coins)}`);
+      const symbols = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT"];
+      const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
       const prices = await res.json();
       
-      // 2. Para cada moeda, busca a análise da IA no seu Render
-      for (const item of prices) {
-        const symbol = item.symbol.replace('USDT', '');
-        const price = parseFloat(item.price).toFixed(2);
-        
+      prices.forEach(async (item) => {
+        const coin = item.symbol.replace('USDT', '');
+        const currentPrice = parseFloat(item.price).toFixed(2);
+
+        // LINHA CORRIGIDA: APONTANDO PARA O SEU RENDER
         try {
-          const aiRes = await fetch(`https://wiki-dash.onrender.com/api/ia-predict?ativo=${symbol}&preco=${price}&rsi=55`);
+          const aiRes = await fetch(`https://wiki-dash.onrender.com/api/ia-predict?ativo=${coin}&preco=${currentPrice}&rsi=55`);
           const aiData = await aiRes.json();
-          
-          setData(prev => ({ 
-            ...prev, 
-            [symbol]: { price, ai: aiData } 
-          }));
-        } catch (err) {
-          console.error(`Erro na IA para ${symbol}:`, err);
-        }
-      }
-    } catch (e) {
-      console.error("Erro ao buscar preços:", e);
-    }
+          setData(prev => ({ ...prev, [coin]: { price: currentPrice, ai: aiData } }));
+        } catch (e) { console.error("Erro na IA:", e); }
+      });
+    } catch (e) { console.error("Erro Binance:", e); }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Atualiza a cada 1 minuto
-    return () => clearInterval(interval);
+    const timer = setInterval(fetchData, 60000);
+    return () => clearInterval(timer);
   }, []);
-
-  // Estilos simples para o Dashboard não quebrar
-  const styles = {
-    container: { background: '#050505', color: 'white', minHeight: '100vh', padding: '40px', fontFamily: 'sans-serif' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', marginTop: '40px' },
-    card: { background: '#111', padding: '25px', borderRadius: '15px', border: '1px solid #333', textAlign: 'center' },
-    price: { fontSize: '2.5rem', color: '#00ff88', fontWeight: 'bold', margin: '10px 0' },
-    iaBox: { marginTop: '15px', background: '#1a1a1a', padding: '15px', borderRadius: '10px' },
-    signal: { fontWeight: 'bold', fontSize: '1.2rem', color: '#fff', textTransform: 'uppercase' }
-  };
 
   return (
     <div style={styles.container}>
-      <h1 style={{ textAlign: 'center', letterSpacing: '2px' }}>WIKI DASH <span style={{ color: '#00ff88' }}>PRO 2.0</span></h1>
-      
+      <div style={styles.header}>
+        <h1 style={{ fontSize: '2.5rem', letterSpacing: '5px' }}>WIKI DASH <span style={{ color: '#00ff88' }}>PRO</span></h1>
+        <p style={{ color: '#666' }}>Sinais em tempo real via Motor IA Render</p>
+      </div>
+
       <div style={styles.grid}>
         {Object.keys(data).map(coin => (
           <div key={coin} style={styles.card}>
-            <h2 style={{ color: '#888' }}>{coin} / USDT</h2>
+            <span style={{...styles.badge, border: '1px solid #00ff88', color: '#00ff88'}}>LIVE MARKET</span>
+            <h2 style={{ fontSize: '1.5rem', color: '#888', margin: '10px 0' }}>{coin} / USDT</h2>
             <div style={styles.price}>${data[coin].price}</div>
-            
+
             {data[coin].ai ? (
-              <div style={styles.iaBox}>
-                <div style={styles.signal}>{data[coin].ai.sinal}</div>
-                <div style={{ marginTop: '10px', fontSize: '0.9rem', color: '#aaa' }}>
-                  S: ${data[coin].ai.suporte} | R: ${data[coin].ai.resistencia}
+              <div style={styles.infoBox}>
+                <div style={{...styles.signal, color: data[coin].ai.sinal === 'BUY' ? '#00ff88' : data[coin].ai.sinal === 'SELL' ? '#ff4444' : '#888'}}>
+                  SINAL: {data[coin].ai.sinal}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '15px', fontSize: '0.8rem', color: '#555' }}>
+                  <span>SUP: ${data[coin].ai.suporte}</span>
+                  <span>RES: ${data[coin].ai.resistencia}</span>
                 </div>
               </div>
             ) : (
-              <div style={{ color: '#444' }}>Conectando IA...</div>
+              <div style={{ marginTop: '20px', color: '#333' }}>SINCRONIZANDO IA...</div>
             )}
           </div>
         ))}
@@ -74,3 +87,5 @@ export default function App() {
     </div>
   );
 }
+
+export default App;
