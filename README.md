@@ -1,16 +1,33 @@
-# React + Vite
+Entendido! Aqui está o texto pronto. É só copiar e colar direto na descrição ou no campo de texto do seu repositório:
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🚀 Wiki Dash v3.1 PRO - Trading Terminal
+Wiki Dash é um terminal de monitoramento de criptoativos de alta performance, projetado para traders que buscam agilidade visual e dados em tempo real. O dashboard utiliza uma estética Cyberpunk com feedback visual instantâneo para níveis críticos de suporte e resistência.
 
-Currently, two official plugins are available:
+⚡ Funcionalidades Principais
+Real-Time Data Stream: Conexão via WebSockets com a Binance para atualização de preços em milissegundos.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Inteligência Visual (Alertas Neon): * 🔴 Alerta Vermelho: Preço atingiu ou caiu abaixo do Suporte.
 
-## React Compiler
+🟠 Alerta Laranja: Preço atingiu ou superou a Resistência.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Indicador RSI (15m): Monitoramento de força relativa para identificar exaustão de mercado.
 
-## Expanding the ESLint configuration
+Sistema de Override: Edição dinâmica de alvos diretamente na interface.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+UI Futurista: Interface otimizada com fontes Orbitron e animações de pulso neon.
+
+🛠️ Stack Tecnológica
+Frontend: React.js (Hooks, WebSockets)
+
+Estilização: CSS-in-JS com animações customizadas.
+
+Fonte de Dados: Binance Public WebSocket API.
+
+🚀 Como Executar
+Clone o repo: git clone https://github.com/likostrung/wiki-dash.git
+
+Instale: npm install
+
+Rode: npm start
+
+Desenvolvido por Likostrung - 2026
